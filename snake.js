@@ -31,11 +31,10 @@ function Snake(brain) {
            // Clockwise
            // Non Clockwise
            // No rotate
-           this.brain = new NeuralNetwork(5, 3,3, 3);
+           this.brain = new NeuralNetwork(4,8,3);
            this.brain.setLearningRate(LEARNING_RATE);
          }
   this.show = function() {
-
     fill(this.color);
     if(this.direction==="u" || this.direction==="d") {
         rect(this.x, this.y, GRID_SIZE, GRID_SIZE*this.size);
@@ -51,10 +50,12 @@ function Snake(brain) {
     this.brain.bias_o.data = brainData.bias_o.data;
   };
   this.getClosestFood = function(foods,head) {
-      let distance = height*2;
+      let distance = Infinity;
       var closestFood ;
     for(food of foods) {
-        let calcDistance = Math.sqrt(((food.x-head.x)*(food.x-head.x)) +((food.y-head.y)*(food.y-head.y)));
+        let xDiff =this.takeMod(food.x-head.x,width) ;
+        let yDiff = this.takeMod(food.y-head.y,height);
+        let calcDistance = Math.sqrt((xDiff*xDiff) + (yDiff*yDiff));
         if( calcDistance < distance) {
             distance = calcDistance;
             closestFood = food;
@@ -66,38 +67,37 @@ function Snake(brain) {
     head = this.getHeadLocation();
     closestFood = this.getClosestFood(foods,head);
     let inputs = [];
-    inputs[0] = (width - head.x)/GRID_SIZE;
-    inputs[1] = (height - head.y) / GRID_SIZE;
-    inputs[2] = (width - closestFood.x)/GRID_SIZE;
-    inputs[3] = (height - closestFood.y) / GRID_SIZE;
+    // inputs[0] = (width - head.x) / width;
+    // inputs[1] = (height - head.y) / height;
+    inputs[0] = (head.x - closestFood.x) / GRID_SIZE;
+    inputs[1] = (head.y - closestFood.y) / GRID_SIZE;
     var paramDir;
-    switch (this.direction) {
+    https: switch (this.direction) {
       case "u":
         paramDir = GRID_SIZE;
         break;
       case "d":
-         paramDir = GRID_SIZE*3;
+        paramDir = GRID_SIZE * 3;
         break;
       case "l":
-         paramDir = GRID_SIZE*2;
+        paramDir = GRID_SIZE * 2;
         break;
       case "r":
-           paramDir = GRID_SIZE*4;
+        paramDir = GRID_SIZE * 4;
         break;
     }
-    inputs[4] = paramDir;
-    //inputs[5] = this.health;
+    inputs[2] = paramDir;
+    inputs[3] = this.size;
     let output = this.brain.predict(inputs);
     let action = output.indexOf(Math.max(...output));
-    if(action == 0) {
+    if(output[2]<0.5){
+      if (action == 0) {
         this.changeDirection("c");
-    }
-    else if (action == 1) {
+      } else if (action == 1) {
         this.changeDirection("n");
+      }
     }
-    else {
-        //
-    }
+    
   };
 
   // c = clockwise n = non-clockwise
@@ -172,10 +172,12 @@ function Snake(brain) {
     head = this.getHeadLocation();
     newX= head.x;
     newY= head.y;
-    if((newY <= height) && (newY >= 0 ) && (newX <= width) && (newX >= 0)) {
-        return false;
+    if(!((newY <= height) && (newY >= 0 ) && (newX <= width) && (newX >= 0))) {
+        this.x = this.takeMod(this.x/GRID_SIZE,width/GRID_SIZE)*GRID_SIZE;
+        this.y = this.takeMod(this.y/GRID_SIZE,height/GRID_SIZE)*GRID_SIZE;
     }
-    return true;
-
+  }
+  this.takeMod = function(n,m) {
+        return ((n % m) + m) % m;
   }
 }

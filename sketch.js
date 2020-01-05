@@ -1,15 +1,18 @@
 let snakes = [];
 let old_gen = [];
 var foods = [];
-const NUMBER_OF_SNAKES = 3000;
-const NUMBER_OF_FOODS = 200;
-const LEARNING_RATE = 0.05;
-const MUTATE_RATE= 0.2;
+const NUMBER_OF_SNAKES = 1000;
+
+const LEARNING_RATE = 0.1;
+const MUTATE_RATE= 0.3;
 const GRID_SIZE = 5;
-const INITIAL_HEALTH = 100;
-const FOOD_HEALTH = 80;
-const speed = 30; // Should be divide 60
 const CANVAS_SIZE = 600;
+const FOOD_HEALTH = 40;
+const speed = 15; // Should be divide 60
+
+const NUMBER_OF_FOODS = CANVAS_SIZE / 20;
+let INITIAL_HEALTH = (CANVAS_SIZE*10)/(NUMBER_OF_FOODS*GRID_SIZE);
+
 var bestSnake;
 var showSnakes = true;
 var showPipes = true;
@@ -28,12 +31,12 @@ function setup() {
   for (let i = 0; i < NUMBER_OF_FOODS; i++) {
      foods.push(new Food());
   }
-  // pipes.push(new Pipe());
+  // foods.push(new food());
   playBestButton = createButton('Play the best snake so far');
   playBestButton.position(5, CANVAS_SIZE+5);
   playBestButton.mousePressed(()=> {playSnake(bestSnake)});
   showSnakesButton =  createButton("Show Snakes");
-  showPipesButton = createButton("Show Pipes");
+  showPipesButton = createButton("Show foods");
   showSnakesButton.position(5, CANVAS_SIZE+30);
   showPipesButton.position(5, CANVAS_SIZE+50);
   showSnakesButton.mousePressed(()=> {showSnakes = !showSnakes});
@@ -42,7 +45,7 @@ function setup() {
   speedSlider.position(100, CANVAS_SIZE+80);
   trainButton = createButton("Train");
   trainButton.position(5, CANVAS_SIZE+80);
-  trainButton.mousePressed(()=> {isTraining = !isTraining; train()});
+  trainButton.mousePressed(()=> {isTraining = !isTraining;  gameSpeed = speedSlider.value(); train()});
   saveCurrentSnakeButton = createButton("Save the current snake");
   saveCurrentSnakeButton.position(5, CANVAS_SIZE+120);
   saveCurrentSnakeButton.mousePressed(() => {
@@ -58,27 +61,26 @@ function setup() {
 }
 
 function gameLoop(){
-  calculateFitness();
   score+=1;
-  gameSpeed = speedSlider.value();
   if (score > highScore) {
     bestSnake = snakes[0]; // ?
   }
   for (snake of snakes) {
     snake.health -= 1;
-    if (snake.isOffScreen() || snake.health < 1) {
+    snake.isOffScreen();
+    if (snake.health < 1) {
       old_gen.push(snakes.splice(snakes.indexOf(snake), 1)[0]);
     }
-    if (snakes.length == 0) {
-      restart();
-      return;
-    }
+  }
+  if (snakes.length == 0) {
+    restart();
+    return;
   }
   for (food of foods) {
     for (snake of snakes) {
       if (food.hits(snake)) {
         snake.size += 1;
-        snake.food += FOOD_HEALTH;
+        snake.health += FOOD_HEALTH;
         foods.splice(foods.indexOf(food), 1);
         foods.push(new Food());
       }
@@ -108,7 +110,6 @@ function draw() {
   if(frameCount%(60/speed) == 0) {
   background(0);
   if(!isTraining){
-                   calculateFitness();
                    //gameSpeed = speedSlider.value();
                    score += 1;
                    if (score > highScore) {
@@ -116,14 +117,15 @@ function draw() {
                    }
                    for (snake of snakes) {
                      snake.health -= 1;
-                     if (snake.isOffScreen() || snake.health < 1) {
+                     snake.isOffScreen();
+                     if (snake.health < 1) {
                        old_gen.push(snakes.splice(snakes.indexOf(snake), 1)[0]);
                      }
-                     if (snakes.length == 0) {
-                      
-                       restart();
-                       return;
-                     }
+                     
+                   }
+                   if (snakes.length == 0) {
+                     restart();
+                     return;
                    }
                    for (food of foods) {
                      if (showPipes) {
@@ -157,6 +159,7 @@ function draw() {
 }
 }
 function keyPressed() {
+  console.log("keyPressed",snakes[0].x,snakes[0].y);
   if (keyCode === LEFT_ARROW) {
     // console.log("Space pressed;")
     snakes[0].changeDirection("n");
@@ -174,7 +177,11 @@ function restart() {
   if(score> highScore) {
     highScore = score;
   }
-  
+  INITIAL_HEALTH -= generation/50
+  let limit = (CANVAS_SIZE)/(NUMBER_OF_FOODS*GRID_SIZE);
+  if(INITIAL_HEALTH < limit) {
+    INITIAL_HEALTH = limit;
+  }
   score = 0;
 
 }
