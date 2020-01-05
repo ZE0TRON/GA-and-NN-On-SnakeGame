@@ -150,7 +150,7 @@ function draw() {
                  }
    
   let s = `Score  : ${score}\nHighScore : ${highScore}\nGeneration : ${generation}`;
-  //fill(255);
+  fill(255);
   text(s, 10, 10, 100, 80);
   let speedText = `Speed  : x${gameSpeed}`;
   text(speedText, CANVAS_SIZE-80, CANVAS_SIZE-30, 100, 80);
